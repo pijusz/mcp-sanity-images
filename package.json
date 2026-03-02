@@ -1,0 +1,47 @@
+{
+  "name": "mcp-sanity-images",
+  "version": "0.1.0",
+  "description": "MCP server for uploading local images to Sanity CMS",
+  "type": "module",
+  "bin": {
+    "mcp-sanity-images": "src/index.ts"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "dev": "bun src/index.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "format": "biome format --write .",
+    "lint": "biome check .",
+    "check": "biome check --write ."
+  },
+  "keywords": [
+    "mcp",
+    "sanity",
+    "image",
+    "upload",
+    "cms",
+    "model-context-protocol",
+    "bun"
+  ],
+  "author": "pijusz",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pijusz/mcp-sanity-images.git"
+  },
+  "homepage": "https://github.com/pijusz/mcp-sanity-images#readme",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.4",
+    "@types/bun": "latest",
+    "typescript": "^5.7.0"
+  }
+}
