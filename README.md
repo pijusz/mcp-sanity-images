@@ -1,8 +1,14 @@
-# mcp-sanity-images
+<p align="center">
+  <img src="logo.svg" alt="MCPi sanity-image" width="280" />
+</p>
 
-MCP server for uploading local images to [Sanity CMS](https://www.sanity.io/). Lets AI assistants (Claude, etc.) upload files from your filesystem directly into Sanity as image assets — single files, batches, or upload-and-patch in one call.
+<p align="center">
+  MCP server for uploading local images to <a href="https://www.sanity.io/">Sanity CMS</a>.
+  <br/>
+  Lets AI assistants upload files from your filesystem directly into Sanity as image assets.
+</p>
 
-Requires [Bun](https://bun.sh/).
+---
 
 ## Tools
 
@@ -16,15 +22,24 @@ Requires [Bun](https://bun.sh/).
 
 Supported formats: PNG, JPG/JPEG, WebP, GIF, SVG.
 
-## Setup
+## Install
 
-### Install
+### Option A: Download binary (recommended)
+
+Download the latest binary for your platform from [Releases](https://github.com/pijusz/mcp-sanity-images/releases):
+
+| Platform | Binary |
+|----------|--------|
+| macOS (Apple Silicon) | `mcp-sanity-images-darwin-arm64` |
+| macOS (Intel) | `mcp-sanity-images-darwin-x64` |
+| Linux (x64) | `mcp-sanity-images-linux-x64` |
 
 ```bash
-bun add -g mcp-sanity-images
+chmod +x mcp-sanity-images-darwin-arm64
+mv mcp-sanity-images-darwin-arm64 /usr/local/bin/mcp-sanity-images
 ```
 
-Or clone and run directly:
+### Option B: From source (requires [Bun](https://bun.sh/))
 
 ```bash
 git clone https://github.com/pijusz/mcp-sanity-images.git
@@ -32,14 +47,20 @@ cd mcp-sanity-images
 bun install
 ```
 
-### Authentication
+### Build from source
+
+```bash
+bun run build  # produces ./mcp-sanity-images standalone binary
+```
+
+## Authentication
 
 The server resolves a Sanity auth token in order:
 
 1. `SANITY_TOKEN` environment variable
 2. Sanity CLI auth at `~/.config/sanity/auth.json` (from `npx sanity login`)
 
-### Configuration
+## Configuration
 
 | Env var | Required | Default | Description |
 |---------|----------|---------|-------------|
@@ -49,16 +70,18 @@ The server resolves a Sanity auth token in order:
 
 All tools also accept `projectId` and `dataset` as parameters, overriding the env vars per-call.
 
-## Usage with Claude Code
+## Usage
+
+### Claude Code (binary)
 
 ```bash
 claude mcp add --scope user --transport stdio \
   -e SANITY_PROJECT_ID=your-project-id \
   -e SANITY_TOKEN=your-token \
-  sanity-images -- bunx mcp-sanity-images
+  sanity-images -- /usr/local/bin/mcp-sanity-images
 ```
 
-Or if installed globally / cloned locally:
+### Claude Code (from source)
 
 ```bash
 claude mcp add --scope user --transport stdio \
@@ -74,8 +97,7 @@ Add to `claude_desktop_config.json`:
 {
   "mcpServers": {
     "sanity-images": {
-      "command": "bunx",
-      "args": ["mcp-sanity-images"],
+      "command": "/usr/local/bin/mcp-sanity-images",
       "env": {
         "SANITY_PROJECT_ID": "your-project-id",
         "SANITY_TOKEN": "your-token"
@@ -140,8 +162,10 @@ query: "*[_type == 'product']{_id, title, slug}"
 
 ```bash
 bun install
-bun test          # run tests
-bun run typecheck # type check
+bun test          # 37 tests
+bun run lint      # biome check
+bun run typecheck # tsc --noEmit
+bun run build     # compile standalone binary
 ```
 
 ## License

@@ -1,9 +1,12 @@
 import { describe, expect, test } from "bun:test";
+import { resolve } from "node:path";
+
+const ROOT = resolve(import.meta.dir, "..");
 
 describe("MCP server", () => {
   test("responds to initialize", async () => {
     const proc = Bun.spawn(["bun", "src/index.ts"], {
-      cwd: "/Users/pijus/dev/mcp-sanity-images",
+      cwd: ROOT,
       stdin: "pipe",
       stdout: "pipe",
       stderr: "pipe",
@@ -23,7 +26,6 @@ describe("MCP server", () => {
     proc.stdin.write(initMsg + "\n");
     proc.stdin.flush();
 
-    // Read stdout for the response
     const reader = proc.stdout.getReader();
     const { value } = await reader.read();
     const response = JSON.parse(new TextDecoder().decode(value));
@@ -36,7 +38,7 @@ describe("MCP server", () => {
 
   test("lists all 5 tools", async () => {
     const proc = Bun.spawn(["bun", "src/index.ts"], {
-      cwd: "/Users/pijus/dev/mcp-sanity-images",
+      cwd: ROOT,
       stdin: "pipe",
       stdout: "pipe",
       stderr: "pipe",
@@ -64,7 +66,6 @@ describe("MCP server", () => {
     proc.stdin.write(messages + "\n");
     proc.stdin.flush();
 
-    // Collect output
     const reader = proc.stdout.getReader();
     let output = "";
     for (let i = 0; i < 2; i++) {
@@ -72,7 +73,6 @@ describe("MCP server", () => {
       output += new TextDecoder().decode(value);
     }
 
-    // Parse the tools/list response (second JSON object)
     const responses = output
       .split("\n")
       .filter(Boolean)
