@@ -27,10 +27,12 @@ The server will read the token from `~/.config/sanity/auth.json` automatically.
 ```bash
 claude mcp add --scope user --transport stdio \
   -e SANITY_PROJECT_ID=your-project-id \
-  sanity-images -- bunx mcp-sanity-images@latest
+  sanity-images -- npx -y mcp-sanity-images@latest
 ```
 
 That's it. Restart Claude Code and the tools are available. Every session runs the latest version automatically.
+
+> Also works with `bunx mcp-sanity-images@latest` if you have [Bun](https://bun.sh/).
 
 <details>
 <summary>Alternative: standalone binary</summary>
@@ -69,14 +71,14 @@ claude mcp add --scope user --transport stdio -e SANITY_PROJECT_ID=your-project-
 Add to your `claude_desktop_config.json`:
 
 <details>
-<summary>Using bunx (auto-updates)</summary>
+<summary>Using npx (auto-updates)</summary>
 
 ```json
 {
   "mcpServers": {
     "sanity-images": {
-      "command": "bunx",
-      "args": ["mcp-sanity-images@latest"],
+      "command": "npx",
+      "args": ["-y", "mcp-sanity-images@latest"],
       "env": {
         "SANITY_PROJECT_ID": "your-project-id"
       }
@@ -196,7 +198,7 @@ query: "*[_type == 'product']{_id, title, slug}"
 
 ## Updates
 
-**Using `bunx @latest`** (recommended): You always get the latest version — no manual updates needed.
+**Using `npx @latest`** (recommended): You always get the latest version — no manual updates needed.
 
 **Using a binary**: The server checks for new releases on startup and logs to stderr if outdated:
 

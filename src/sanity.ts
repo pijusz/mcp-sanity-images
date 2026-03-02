@@ -1,4 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { SanityAsset, SanityConfig, SanityImageRef } from "./types.js";
 
@@ -58,7 +59,7 @@ export async function uploadAsset(
   config: SanityConfig,
 ): Promise<SanityAsset> {
   const token = getToken();
-  const buffer = await Bun.file(filePath).arrayBuffer();
+  const buffer = await readFile(filePath);
   const ext = filePath.split(".").pop()?.toLowerCase() ?? "png";
   const mime = MIME_TYPES[ext] ?? "image/png";
   const filename = filePath.split("/").pop() ?? "image.png";

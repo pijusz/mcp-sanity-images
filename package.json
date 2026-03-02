@@ -4,10 +4,10 @@
   "description": "MCP server for uploading local images to Sanity CMS",
   "type": "module",
   "bin": {
-    "mcp-sanity-images": "src/index.ts"
+    "mcp-sanity-images": "dist/index.js"
   },
   "files": [
-    "src",
+    "dist",
     "README.md",
     "LICENSE"
   ],
@@ -18,7 +18,9 @@
     "format": "biome format --write .",
     "lint": "biome check .",
     "check": "biome check --write .",
-    "build": "bun build src/index.ts --compile --outfile=mcp-sanity-images"
+    "build": "bun build src/index.ts --compile --outfile=mcp-sanity-images",
+    "build:npm": "bun build src/index.ts --bundle --target node --outfile dist/index.js && sed -i '' '1s|#!/usr/bin/env bun|#!/usr/bin/env node|' dist/index.js",
+    "prepublishOnly": "bun run build:npm"
   },
   "keywords": [
     "mcp",
