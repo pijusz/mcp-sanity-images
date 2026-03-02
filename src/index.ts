@@ -2,6 +2,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import pkg from "../package.json";
+import { log } from "./log.js";
 import { registerBatchTools } from "./tools/batch.js";
 import { registerBrowseTools } from "./tools/browse.js";
 import { registerQueryTools } from "./tools/query.js";
@@ -26,7 +27,7 @@ registerQueryTools(server);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
-console.error(`mcp-sanity-images v${VERSION} running on stdio`);
+log.info(`v${VERSION} running on stdio`);
 
 checkForUpdates();
 
@@ -43,8 +44,8 @@ function checkForUpdates() {
       if (!data?.tag_name) return;
       const latest = data.tag_name.replace(/^v/, "");
       if (latest !== VERSION) {
-        console.error(
-          `[update] v${latest} available (current: v${VERSION}). Download: https://github.com/pijusz/mcp-sanity-images/releases/latest`,
+        log.warn(
+          `v${latest} available (current: v${VERSION}). Download: https://github.com/pijusz/mcp-sanity-images/releases/latest`,
         );
       }
     })
