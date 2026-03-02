@@ -23,7 +23,7 @@ export function getToken(): string {
   const token = process.env.SANITY_TOKEN;
   if (token) return token;
 
-  const home = process.env.HOME ?? "";
+  const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
   const authPath = join(home, ".config", "sanity", "auth.json");
   if (existsSync(authPath)) {
     try {
