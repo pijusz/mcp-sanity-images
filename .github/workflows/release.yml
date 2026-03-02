@@ -71,33 +71,3 @@ jobs:
         with:
           generate_release_notes: true
           files: artifacts/*/mcp-sanity-images-*
-
-  publish:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          registry-url: "https://registry.npmjs.org"
-
-      - run: bun install --frozen-lockfile
-
-      - name: Set version from tag
-        run: |
-          VERSION=${GITHUB_REF_NAME#v}
-          bun -e "const p=require('./package.json');p.version='$VERSION';require('fs').writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')"
-
-      - name: Build for npm
-        run: bun build src/index.ts --bundle --target node --outfile dist/index.js && node -e "const f='dist/index.js';require('fs').writeFileSync(f,require('fs').readFileSync(f,'utf8').replace('#!/usr/bin/env bun','#!/usr/bin/env node'))"
-
-      - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
