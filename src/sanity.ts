@@ -104,7 +104,7 @@ export async function uploadAsset(
   const buffer = await readFile(filePath);
   const ext = filePath.split(".").pop()?.toLowerCase() ?? "png";
   const mime = MIME_TYPES[ext] ?? "image/png";
-  const filename = filePath.split("/").pop() ?? "image.png";
+  const filename = filePath.split(/[/\\]/).pop() ?? "image.png";
 
   const res = await fetchWithRetry(
     `${baseUrl(config.projectId)}/assets/images/${config.dataset}?filename=${encodeURIComponent(filename)}`,

@@ -31,7 +31,7 @@ export function registerUploadTools(server: McpServer): void {
     async ({ filePath, alt, projectId, dataset }): Promise<ToolResponse> => {
       const config = resolveConfig({ projectId, dataset });
       const asset = await uploadAsset(filePath, config);
-      const altText = alt ?? altFromFilename(filePath.split("/").pop() ?? "image");
+      const altText = alt ?? altFromFilename(filePath.split(/[/\\]/).pop() ?? "image");
       const reference = imageRef(asset._id, altText);
 
       const result: UploadResult = {
@@ -68,7 +68,7 @@ export function registerUploadTools(server: McpServer): void {
     }): Promise<ToolResponse> => {
       const config = resolveConfig({ projectId, dataset });
       const asset = await uploadAsset(filePath, config);
-      const altText = alt ?? altFromFilename(filePath.split("/").pop() ?? "image");
+      const altText = alt ?? altFromFilename(filePath.split(/[/\\]/).pop() ?? "image");
       const ref = imageRef(asset._id, altText);
 
       const mutationResult = await mutate(

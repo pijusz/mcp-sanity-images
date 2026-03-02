@@ -1,4 +1,5 @@
 import { existsSync, statSync } from "node:fs";
+import { basename } from "node:path";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { collectImages } from "../sanity.js";
@@ -33,7 +34,7 @@ export function registerBrowseTools(server: McpServer): void {
 
       const images: ImageInfo[] = files.map((path) => {
         const stat = statSync(path);
-        const name = path.split("/").pop() ?? "";
+        const name = basename(path);
         return {
           path,
           name,
