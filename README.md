@@ -20,7 +20,7 @@ Either set the `SANITY_TOKEN` env var, or just log in with the Sanity CLI:
 npx sanity login
 ```
 
-The server reads the token from the Sanity CLI config automatically (`~/.config/sanity/auth.json` on macOS/Linux, `%APPDATA%\sanity\auth.json` on Windows).
+The server reads the token from the Sanity CLI config automatically (`~/.config/sanity/config.json` on all platforms).
 
 ### 2. Add to Claude Code
 

@@ -65,18 +65,12 @@ export function getToken(): string {
   const token = process.env.SANITY_TOKEN;
   if (token) return token;
 
+  // Sanity CLI stores auth in ~/.config/sanity/config.json (all platforms)
   const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
-  const appdata = process.env.APPDATA;
-
-  // Sanity CLI stores auth in config.json (authToken) or legacy auth.json (token)
   const candidates: { path: string; field: string }[] = [];
   if (home) {
     candidates.push({ path: join(home, ".config", "sanity", "config.json"), field: "authToken" });
     candidates.push({ path: join(home, ".config", "sanity", "auth.json"), field: "token" });
-  }
-  if (appdata) {
-    candidates.push({ path: join(appdata, "sanity", "config.json"), field: "authToken" });
-    candidates.push({ path: join(appdata, "sanity", "auth.json"), field: "token" });
   }
 
   for (const { path, field } of candidates) {
