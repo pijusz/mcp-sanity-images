@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.svg" alt="MCPi sanity-image" width="280" />
+  <img src="logo.svg" alt="MCPi sanity-images" width="280" />
 </p>
 
 <p align="center">
@@ -12,9 +12,30 @@
 
 ## Quick Start
 
-### 1. Download the binary
+### 1. Get your Sanity token
 
-Grab the latest binary for your OS from [Releases](https://github.com/pijusz/mcp-sanity-images/releases):
+Either set the `SANITY_TOKEN` env var, or just log in with the Sanity CLI:
+
+```bash
+npx sanity login
+```
+
+The server will read the token from `~/.config/sanity/auth.json` automatically.
+
+### 2. Add to Claude Code
+
+```bash
+claude mcp add --scope user --transport stdio \
+  -e SANITY_PROJECT_ID=your-project-id \
+  sanity-images -- bunx mcp-sanity-images@latest
+```
+
+That's it. Restart Claude Code and the tools are available. Every session runs the latest version automatically.
+
+<details>
+<summary>Alternative: standalone binary</summary>
+
+Download a pre-built binary from [Releases](https://github.com/pijusz/mcp-sanity-images/releases):
 
 | Platform | File |
 |----------|------|
@@ -26,50 +47,48 @@ Grab the latest binary for your OS from [Releases](https://github.com/pijusz/mcp
 **macOS / Linux:**
 
 ```bash
-# Download (pick your platform)
 curl -Lo mcp-sanity-images https://github.com/pijusz/mcp-sanity-images/releases/latest/download/mcp-sanity-images-darwin-arm64
 chmod +x mcp-sanity-images
 sudo mv mcp-sanity-images /usr/local/bin/
+claude mcp add --scope user --transport stdio \
+  -e SANITY_PROJECT_ID=your-project-id \
+  sanity-images -- /usr/local/bin/mcp-sanity-images
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
 Invoke-WebRequest -Uri "https://github.com/pijusz/mcp-sanity-images/releases/latest/download/mcp-sanity-images-windows-x64.exe" -OutFile "$env:LOCALAPPDATA\mcp-sanity-images.exe"
-```
-
-### 2. Get your Sanity token
-
-Either set the `SANITY_TOKEN` env var, or just log in with the Sanity CLI:
-
-```bash
-npx sanity login
-```
-
-The server will read the token from `~/.config/sanity/auth.json` automatically.
-
-### 3. Add to Claude Code
-
-```bash
-claude mcp add --scope user --transport stdio \
-  -e SANITY_PROJECT_ID=your-project-id \
-  sanity-images -- /usr/local/bin/mcp-sanity-images
-```
-
-**Windows:**
-
-```powershell
 claude mcp add --scope user --transport stdio -e SANITY_PROJECT_ID=your-project-id sanity-images -- "%LOCALAPPDATA%\mcp-sanity-images.exe"
 ```
 
-That's it. Restart Claude Code and the tools are available.
+</details>
 
 ### Claude Desktop
 
 Add to your `claude_desktop_config.json`:
 
 <details>
-<summary>macOS / Linux</summary>
+<summary>Using bunx (auto-updates)</summary>
+
+```json
+{
+  "mcpServers": {
+    "sanity-images": {
+      "command": "bunx",
+      "args": ["mcp-sanity-images@latest"],
+      "env": {
+        "SANITY_PROJECT_ID": "your-project-id"
+      }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary>Using binary (macOS / Linux)</summary>
 
 ```json
 {
@@ -87,7 +106,7 @@ Add to your `claude_desktop_config.json`:
 </details>
 
 <details>
-<summary>Windows</summary>
+<summary>Using binary (Windows)</summary>
 
 ```json
 {
@@ -177,7 +196,9 @@ query: "*[_type == 'product']{_id, title, slug}"
 
 ## Updates
 
-The server checks for new releases on startup and logs to stderr if a newer version is available:
+**Using `bunx @latest`** (recommended): You always get the latest version — no manual updates needed.
+
+**Using a binary**: The server checks for new releases on startup and logs to stderr if outdated:
 
 ```
 [update] v0.2.0 available (current: v0.1.0). Download: https://github.com/pijusz/mcp-sanity-images/releases/latest
