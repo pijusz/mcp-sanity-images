@@ -22,6 +22,9 @@ jobs:
           - os: ubuntu-latest
             target: bun-linux-x64
             artifact: mcp-sanity-images-linux-x64
+          - os: windows-latest
+            target: bun-windows-x64
+            artifact: mcp-sanity-images-windows-x64.exe
 
     runs-on: ${{ matrix.os }}
 
@@ -31,6 +34,12 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+
+      - name: Set version from tag
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          bun -e "const p=require('./package.json');p.version='$VERSION';require('fs').writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')"
+        shell: bash
 
       - run: bun install --frozen-lockfile
 
@@ -54,7 +63,7 @@ jobs:
           path: artifacts
 
       - name: Make binaries executable
-        run: chmod +x artifacts/*/mcp-sanity-images-*
+        run: chmod +x artifacts/*/mcp-sanity-images-* 2>/dev/null || true
 
       - name: Create release
         uses: softprops/action-gh-release@v2

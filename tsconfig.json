@@ -8,6 +8,7 @@
     "skipLibCheck": true,
     "noEmit": true,
     "isolatedModules": true,
+    "resolveJsonModule": true,
     "types": ["bun-types"]
   },
   "include": ["src/**/*.ts"],

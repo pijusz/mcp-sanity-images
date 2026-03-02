@@ -10,6 +10,100 @@
 
 ---
 
+## Quick Start
+
+### 1. Download the binary
+
+Grab the latest binary for your OS from [Releases](https://github.com/pijusz/mcp-sanity-images/releases):
+
+| Platform | File |
+|----------|------|
+| macOS (Apple Silicon) | `mcp-sanity-images-darwin-arm64` |
+| macOS (Intel) | `mcp-sanity-images-darwin-x64` |
+| Linux | `mcp-sanity-images-linux-x64` |
+| Windows | `mcp-sanity-images-windows-x64.exe` |
+
+**macOS / Linux:**
+
+```bash
+# Download (pick your platform)
+curl -Lo mcp-sanity-images https://github.com/pijusz/mcp-sanity-images/releases/latest/download/mcp-sanity-images-darwin-arm64
+chmod +x mcp-sanity-images
+sudo mv mcp-sanity-images /usr/local/bin/
+```
+
+**Windows (PowerShell):**
+
+```powershell
+Invoke-WebRequest -Uri "https://github.com/pijusz/mcp-sanity-images/releases/latest/download/mcp-sanity-images-windows-x64.exe" -OutFile "$env:LOCALAPPDATA\mcp-sanity-images.exe"
+```
+
+### 2. Get your Sanity token
+
+Either set the `SANITY_TOKEN` env var, or just log in with the Sanity CLI:
+
+```bash
+npx sanity login
+```
+
+The server will read the token from `~/.config/sanity/auth.json` automatically.
+
+### 3. Add to Claude Code
+
+```bash
+claude mcp add --scope user --transport stdio \
+  -e SANITY_PROJECT_ID=your-project-id \
+  sanity-images -- /usr/local/bin/mcp-sanity-images
+```
+
+**Windows:**
+
+```powershell
+claude mcp add --scope user --transport stdio -e SANITY_PROJECT_ID=your-project-id sanity-images -- "%LOCALAPPDATA%\mcp-sanity-images.exe"
+```
+
+That's it. Restart Claude Code and the tools are available.
+
+### Claude Desktop
+
+Add to your `claude_desktop_config.json`:
+
+<details>
+<summary>macOS / Linux</summary>
+
+```json
+{
+  "mcpServers": {
+    "sanity-images": {
+      "command": "/usr/local/bin/mcp-sanity-images",
+      "env": {
+        "SANITY_PROJECT_ID": "your-project-id"
+      }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary>Windows</summary>
+
+```json
+{
+  "mcpServers": {
+    "sanity-images": {
+      "command": "%LOCALAPPDATA%\\mcp-sanity-images.exe",
+      "env": {
+        "SANITY_PROJECT_ID": "your-project-id"
+      }
+    }
+  }
+}
+```
+
+</details>
+
 ## Tools
 
 | Tool | Description |
@@ -22,44 +116,6 @@
 
 Supported formats: PNG, JPG/JPEG, WebP, GIF, SVG.
 
-## Install
-
-### Option A: Download binary (recommended)
-
-Download the latest binary for your platform from [Releases](https://github.com/pijusz/mcp-sanity-images/releases):
-
-| Platform | Binary |
-|----------|--------|
-| macOS (Apple Silicon) | `mcp-sanity-images-darwin-arm64` |
-| macOS (Intel) | `mcp-sanity-images-darwin-x64` |
-| Linux (x64) | `mcp-sanity-images-linux-x64` |
-
-```bash
-chmod +x mcp-sanity-images-darwin-arm64
-mv mcp-sanity-images-darwin-arm64 /usr/local/bin/mcp-sanity-images
-```
-
-### Option B: From source (requires [Bun](https://bun.sh/))
-
-```bash
-git clone https://github.com/pijusz/mcp-sanity-images.git
-cd mcp-sanity-images
-bun install
-```
-
-### Build from source
-
-```bash
-bun run build  # produces ./mcp-sanity-images standalone binary
-```
-
-## Authentication
-
-The server resolves a Sanity auth token in order:
-
-1. `SANITY_TOKEN` environment variable
-2. Sanity CLI auth at `~/.config/sanity/auth.json` (from `npx sanity login`)
-
 ## Configuration
 
 | Env var | Required | Default | Description |
@@ -69,43 +125,6 @@ The server resolves a Sanity auth token in order:
 | `SANITY_TOKEN` | No* | — | API token (*falls back to CLI auth) |
 
 All tools also accept `projectId` and `dataset` as parameters, overriding the env vars per-call.
-
-## Usage
-
-### Claude Code (binary)
-
-```bash
-claude mcp add --scope user --transport stdio \
-  -e SANITY_PROJECT_ID=your-project-id \
-  -e SANITY_TOKEN=your-token \
-  sanity-images -- /usr/local/bin/mcp-sanity-images
-```
-
-### Claude Code (from source)
-
-```bash
-claude mcp add --scope user --transport stdio \
-  -e SANITY_PROJECT_ID=your-project-id \
-  sanity-images -- bun /path/to/mcp-sanity-images/src/index.ts
-```
-
-### Claude Desktop
-
-Add to `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "sanity-images": {
-      "command": "/usr/local/bin/mcp-sanity-images",
-      "env": {
-        "SANITY_PROJECT_ID": "your-project-id",
-        "SANITY_TOKEN": "your-token"
-      }
-    }
-  }
-}
-```
 
 ## Tool Details
 
@@ -118,11 +137,11 @@ filePath: "/path/to/hero.png"
 alt: "Hero banner"  (optional — derived from filename)
 ```
 
-Returns: `{ assetId, url, alt, reference }` — the `reference` object is ready to patch onto any Sanity image field.
+Returns `{ assetId, url, alt, reference }` — the `reference` is ready to patch onto any Sanity image field.
 
 ### upload_and_set
 
-Upload + patch in one call. Uploads the image, then sets it on the specified document field.
+Upload + patch in one call.
 
 ```
 filePath: "/path/to/hero.png"
@@ -132,14 +151,12 @@ fieldPath: "hero.image"
 
 ### batch_upload
 
-Upload all images from a directory. Optionally recursive.
+Upload all images from a directory.
 
 ```
 directory: "/path/to/images"
 recursive: true
 ```
-
-Returns an array of `{ filePath, assetId, url, alt, reference }` per image.
 
 ### list_images
 
@@ -158,13 +175,32 @@ Run any GROQ query. Useful to find document IDs before using `upload_and_set`.
 query: "*[_type == 'product']{_id, title, slug}"
 ```
 
-## Development
+## Updates
+
+The server checks for new releases on startup and logs to stderr if a newer version is available:
+
+```
+[update] v0.2.0 available (current: v0.1.0). Download: https://github.com/pijusz/mcp-sanity-images/releases/latest
+```
+
+Check your installed version:
 
 ```bash
+mcp-sanity-images --version
+```
+
+To update, download the new binary and replace the old one.
+
+## Development
+
+Requires [Bun](https://bun.sh/).
+
+```bash
+git clone https://github.com/pijusz/mcp-sanity-images.git
+cd mcp-sanity-images
 bun install
 bun test          # 37 tests
 bun run lint      # biome check
-bun run typecheck # tsc --noEmit
 bun run build     # compile standalone binary
 ```
 
