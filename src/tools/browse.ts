@@ -2,8 +2,8 @@ import { existsSync, statSync } from "node:fs";
 import { basename } from "node:path";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { collectImages } from "../sanity.js";
-import type { ImageInfo, ToolResponse } from "../types.js";
+import { collectImages } from "../sanity";
+import type { ImageInfo, ToolResponse } from "../types";
 
 export function registerBrowseTools(server: McpServer): void {
   server.tool(

@@ -10,7 +10,7 @@ import {
   imageRef,
   isImageFile,
   resolveConfig,
-} from "../src/sanity.js";
+} from "../src/sanity";
 
 // --- Pure functions (no mocking needed) ---
 

@@ -3,10 +3,10 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { registerBatchTools } from "../src/tools/batch.js";
-import { registerBrowseTools } from "../src/tools/browse.js";
-import { registerQueryTools } from "../src/tools/query.js";
-import { registerUploadTools } from "../src/tools/upload.js";
+import { registerBatchTools } from "../src/tools/batch";
+import { registerBrowseTools } from "../src/tools/browse";
+import { registerQueryTools } from "../src/tools/query";
+import { registerUploadTools } from "../src/tools/upload";
 
 function getTools(server: McpServer): Record<string, any> {
   return (server as any)._registeredTools;

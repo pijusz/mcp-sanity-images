@@ -2,11 +2,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import pkg from "../package.json";
-import { log } from "./log.js";
-import { registerBatchTools } from "./tools/batch.js";
-import { registerBrowseTools } from "./tools/browse.js";
-import { registerQueryTools } from "./tools/query.js";
-import { registerUploadTools } from "./tools/upload.js";
+import { log } from "./log";
+import { registerBatchTools } from "./tools/batch";
+import { registerBrowseTools } from "./tools/browse";
+import { registerQueryTools } from "./tools/query";
+import { registerUploadTools } from "./tools/upload";
 
 export const VERSION = pkg.version;
 

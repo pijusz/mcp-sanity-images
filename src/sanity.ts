@@ -1,8 +1,8 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { log } from "./log.js";
-import type { SanityAsset, SanityConfig, SanityImageRef } from "./types.js";
+import { log } from "./log";
+import type { SanityAsset, SanityConfig, SanityImageRef } from "./types";
 
 const API_VERSION = "2021-10-21";
 const DEFAULT_DATASET = "production";

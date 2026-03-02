@@ -8,8 +8,8 @@ import {
   imageRef,
   resolveConfig,
   uploadAsset,
-} from "../sanity.js";
-import type { BatchUploadResult, ToolResponse } from "../types.js";
+} from "../sanity";
+import type { BatchUploadResult, ToolResponse } from "../types";
 
 export function registerBatchTools(server: McpServer): void {
   server.tool(

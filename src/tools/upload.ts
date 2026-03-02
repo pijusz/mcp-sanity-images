@@ -6,8 +6,8 @@ import {
   mutate,
   resolveConfig,
   uploadAsset,
-} from "../sanity.js";
-import type { ToolResponse, UploadResult } from "../types.js";
+} from "../sanity";
+import type { ToolResponse, UploadResult } from "../types";
 
 const projectIdParam = z
   .string()

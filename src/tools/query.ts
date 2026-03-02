@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { groq, resolveConfig } from "../sanity.js";
-import type { ToolResponse } from "../types.js";
+import { groq, resolveConfig } from "../sanity";
+import type { ToolResponse } from "../types";
 
 export function registerQueryTools(server: McpServer): void {
   server.tool(
