@@ -30,7 +30,7 @@ src/
 
 - All tools accept optional `projectId`/`dataset` params that override env vars
 - `resolveOpts()` resolves config: tool params → env vars → defaults
-- `getToken()` resolves auth: `SANITY_TOKEN` env → `~/.config/sanity/auth.json`
+- `getToken()` resolves auth: `SANITY_TOKEN` env → CLI auth (`~/.config/sanity/auth.json` or `%APPDATA%\sanity\auth.json`)
 - `console.error` only — stdout is reserved for JSON-RPC (stdio transport)
 - `imageRef()` builds the `{ _type: "image", asset: { _ref } }` structure Sanity expects
 

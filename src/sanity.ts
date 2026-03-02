@@ -65,13 +65,19 @@ export function getToken(): string {
   const token = process.env.SANITY_TOKEN;
   if (token) return token;
 
+  const candidates: string[] = [];
   const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
-  const authPath = join(home, ".config", "sanity", "auth.json");
-  if (existsSync(authPath)) {
-    try {
-      const auth = JSON.parse(readFileSync(authPath, "utf8"));
-      if (auth?.token) return auth.token;
-    } catch {}
+  if (home) candidates.push(join(home, ".config", "sanity", "auth.json"));
+  const appdata = process.env.APPDATA;
+  if (appdata) candidates.push(join(appdata, "sanity", "auth.json"));
+
+  for (const authPath of candidates) {
+    if (existsSync(authPath)) {
+      try {
+        const auth = JSON.parse(readFileSync(authPath, "utf8"));
+        if (auth?.token) return auth.token;
+      } catch {}
+    }
   }
 
   throw new Error(
