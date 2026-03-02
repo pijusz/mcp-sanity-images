@@ -65,17 +65,25 @@ export function getToken(): string {
   const token = process.env.SANITY_TOKEN;
   if (token) return token;
 
-  const candidates: string[] = [];
   const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
-  if (home) candidates.push(join(home, ".config", "sanity", "auth.json"));
   const appdata = process.env.APPDATA;
-  if (appdata) candidates.push(join(appdata, "sanity", "auth.json"));
 
-  for (const authPath of candidates) {
-    if (existsSync(authPath)) {
+  // Sanity CLI stores auth in config.json (authToken) or legacy auth.json (token)
+  const candidates: { path: string; field: string }[] = [];
+  if (home) {
+    candidates.push({ path: join(home, ".config", "sanity", "config.json"), field: "authToken" });
+    candidates.push({ path: join(home, ".config", "sanity", "auth.json"), field: "token" });
+  }
+  if (appdata) {
+    candidates.push({ path: join(appdata, "sanity", "config.json"), field: "authToken" });
+    candidates.push({ path: join(appdata, "sanity", "auth.json"), field: "token" });
+  }
+
+  for (const { path, field } of candidates) {
+    if (existsSync(path)) {
       try {
-        const auth = JSON.parse(readFileSync(authPath, "utf8"));
-        if (auth?.token) return auth.token;
+        const data = JSON.parse(readFileSync(path, "utf8"));
+        if (data?.[field]) return data[field];
       } catch {}
     }
   }

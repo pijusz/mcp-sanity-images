@@ -136,11 +136,52 @@ describe("getToken", () => {
     expect(getToken()).toBe("test-token-123");
   });
 
+  test("reads authToken from config.json", () => {
+    delete process.env.SANITY_TOKEN;
+    const fakeHome = join(tmpdir(), `sanity-auth-test-${Date.now()}`);
+    const configDir = join(fakeHome, ".config", "sanity");
+    mkdirSync(configDir, { recursive: true });
+    writeFileSync(join(configDir, "config.json"), JSON.stringify({ authToken: "cli-token-456" }));
+    process.env.HOME = fakeHome;
+    process.env.USERPROFILE = fakeHome;
+    delete process.env.APPDATA;
+    expect(getToken()).toBe("cli-token-456");
+    rmSync(fakeHome, { recursive: true, force: true });
+  });
+
+  test("reads token from legacy auth.json", () => {
+    delete process.env.SANITY_TOKEN;
+    const fakeHome = join(tmpdir(), `sanity-auth-legacy-${Date.now()}`);
+    const configDir = join(fakeHome, ".config", "sanity");
+    mkdirSync(configDir, { recursive: true });
+    writeFileSync(join(configDir, "auth.json"), JSON.stringify({ token: "legacy-token-789" }));
+    process.env.HOME = fakeHome;
+    process.env.USERPROFILE = fakeHome;
+    delete process.env.APPDATA;
+    expect(getToken()).toBe("legacy-token-789");
+    rmSync(fakeHome, { recursive: true, force: true });
+  });
+
+  test("prefers config.json over auth.json", () => {
+    delete process.env.SANITY_TOKEN;
+    const fakeHome = join(tmpdir(), `sanity-auth-priority-${Date.now()}`);
+    const configDir = join(fakeHome, ".config", "sanity");
+    mkdirSync(configDir, { recursive: true });
+    writeFileSync(join(configDir, "config.json"), JSON.stringify({ authToken: "new-token" }));
+    writeFileSync(join(configDir, "auth.json"), JSON.stringify({ token: "old-token" }));
+    process.env.HOME = fakeHome;
+    process.env.USERPROFILE = fakeHome;
+    delete process.env.APPDATA;
+    expect(getToken()).toBe("new-token");
+    rmSync(fakeHome, { recursive: true, force: true });
+  });
+
   test("throws when no token available", () => {
     delete process.env.SANITY_TOKEN;
     const fake = join(tmpdir(), "nonexistent-sanity-auth");
     process.env.HOME = fake;
     process.env.USERPROFILE = fake;
+    delete process.env.APPDATA;
     expect(() => getToken()).toThrow("No SANITY_TOKEN");
   });
 });

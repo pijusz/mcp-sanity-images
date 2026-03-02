@@ -25,9 +25,9 @@ The server reads the token from the Sanity CLI config automatically (`~/.config/
 ### 2. Add to Claude Code
 
 ```bash
-claude mcp add --scope user --transport stdio \
+claude mcp add sanity-images --scope user --transport stdio \
   -e SANITY_PROJECT_ID=your-project-id \
-  sanity-images -- npx -y mcp-sanity-images@latest
+  -- npx -y mcp-sanity-images@latest
 ```
 
 That's it. Restart Claude Code and the tools are available. Every session runs the latest version automatically.
@@ -52,16 +52,16 @@ Download a pre-built binary from [Releases](https://github.com/pijusz/mcp-sanity
 curl -Lo mcp-sanity-images https://github.com/pijusz/mcp-sanity-images/releases/latest/download/mcp-sanity-images-darwin-arm64
 chmod +x mcp-sanity-images
 sudo mv mcp-sanity-images /usr/local/bin/
-claude mcp add --scope user --transport stdio \
+claude mcp add sanity-images --scope user --transport stdio \
   -e SANITY_PROJECT_ID=your-project-id \
-  sanity-images -- /usr/local/bin/mcp-sanity-images
+  -- /usr/local/bin/mcp-sanity-images
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
 Invoke-WebRequest -Uri "https://github.com/pijusz/mcp-sanity-images/releases/latest/download/mcp-sanity-images-windows-x64.exe" -OutFile "$env:LOCALAPPDATA\mcp-sanity-images.exe"
-claude mcp add --scope user --transport stdio -e SANITY_PROJECT_ID=your-project-id sanity-images -- "%LOCALAPPDATA%\mcp-sanity-images.exe"
+claude mcp add sanity-images --scope user --transport stdio -e SANITY_PROJECT_ID=your-project-id -- "%LOCALAPPDATA%\mcp-sanity-images.exe"
 ```
 
 </details>
