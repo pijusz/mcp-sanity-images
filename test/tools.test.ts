@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerBatchTools } from "../src/tools/batch.js";
 import { registerBrowseTools } from "../src/tools/browse.js";
@@ -51,19 +54,17 @@ describe("tool registration", () => {
 });
 
 describe("list_images", () => {
-  const tmpDir = `/tmp/mcp-sanity-images-browse-${Date.now()}`;
+  const tmpDir = join(tmpdir(), `mcp-sanity-images-browse-${Date.now()}`);
 
-  beforeEach(async () => {
-    const { mkdirSync, writeFileSync } = await import("node:fs");
-    mkdirSync(`${tmpDir}/nested`, { recursive: true });
-    writeFileSync(`${tmpDir}/photo.png`, Buffer.alloc(1024));
-    writeFileSync(`${tmpDir}/icon.svg`, "<svg></svg>");
-    writeFileSync(`${tmpDir}/readme.txt`, "not an image");
-    writeFileSync(`${tmpDir}/nested/deep.jpg`, Buffer.alloc(512));
+  beforeEach(() => {
+    mkdirSync(join(tmpDir, "nested"), { recursive: true });
+    writeFileSync(join(tmpDir, "photo.png"), Buffer.alloc(1024));
+    writeFileSync(join(tmpDir, "icon.svg"), "<svg></svg>");
+    writeFileSync(join(tmpDir, "readme.txt"), "not an image");
+    writeFileSync(join(tmpDir, "nested", "deep.jpg"), Buffer.alloc(512));
   });
 
-  afterEach(async () => {
-    const { rmSync } = await import("node:fs");
+  afterEach(() => {
     rmSync(tmpDir, { recursive: true, force: true });
   });
 
@@ -91,14 +92,14 @@ describe("list_images", () => {
     const server = new McpServer({ name: "test", version: "0.0.1" });
     registerBrowseTools(server);
     const tool = getTools(server)["list_images"];
-    const result = await tool.handler({ directory: "/nonexistent/path" }, {} as any);
+    const missing = join(tmpdir(), "nonexistent-mcp-test-dir");
+    const result = await tool.handler({ directory: missing }, {} as any);
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("not found");
   });
 
   test("returns message for empty directory", async () => {
-    const { mkdirSync } = await import("node:fs");
-    const emptyDir = `${tmpDir}/empty`;
+    const emptyDir = join(tmpDir, "empty");
     mkdirSync(emptyDir);
     const server = new McpServer({ name: "test", version: "0.0.1" });
     registerBrowseTools(server);
@@ -116,7 +117,7 @@ describe("list_images", () => {
     const photo = data.images.find((i: any) => i.name === "photo.png");
     expect(photo.size).toBe(1024);
     expect(photo.extension).toBe("png");
-    expect(photo.path).toContain(tmpDir);
+    expect(photo.path).toInclude("photo.png");
   });
 });
 
@@ -132,24 +133,23 @@ describe("batch_upload error paths", () => {
     const server = new McpServer({ name: "test", version: "0.0.1" });
     registerBatchTools(server);
     const tool = getTools(server)["batch_upload"];
-    const result = await tool.handler({ directory: "/nonexistent" }, {} as any);
+    const missing = join(tmpdir(), "nonexistent-mcp-batch-dir");
+    const result = await tool.handler({ directory: missing }, {} as any);
     expect(result.isError).toBe(true);
   });
 
   test("returns message for empty directory", async () => {
-    const { mkdirSync } = await import("node:fs");
-    const tmpDir = `/tmp/mcp-sanity-images-batch-empty-${Date.now()}`;
-    mkdirSync(tmpDir, { recursive: true });
+    const emptyDir = join(tmpdir(), `mcp-sanity-images-batch-empty-${Date.now()}`);
+    mkdirSync(emptyDir, { recursive: true });
 
     process.env.SANITY_PROJECT_ID = "test-project";
     const server = new McpServer({ name: "test", version: "0.0.1" });
     registerBatchTools(server);
     const tool = getTools(server)["batch_upload"];
-    const result = await tool.handler({ directory: tmpDir }, {} as any);
+    const result = await tool.handler({ directory: emptyDir }, {} as any);
     expect(result.content[0].text).toContain("No image files");
 
-    const { rmSync } = await import("node:fs");
-    rmSync(tmpDir, { recursive: true, force: true });
+    rmSync(emptyDir, { recursive: true, force: true });
   });
 
   test("throws without project ID", async () => {
@@ -157,8 +157,7 @@ describe("batch_upload error paths", () => {
     const server = new McpServer({ name: "test", version: "0.0.1" });
     registerBatchTools(server);
     const tool = getTools(server)["batch_upload"];
-    expect(tool.handler({ directory: "/tmp" }, {} as any)).rejects.toThrow(
-      "No project ID",
-    );
+    const dir = join(tmpdir(), "some-dir");
+    expect(tool.handler({ directory: dir }, {} as any)).rejects.toThrow("No project ID");
   });
 });

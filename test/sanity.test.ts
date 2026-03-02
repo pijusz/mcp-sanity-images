@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   altFromFilename,
   collectImages,
@@ -135,7 +138,9 @@ describe("getToken", () => {
 
   test("throws when no token available", () => {
     delete process.env.SANITY_TOKEN;
-    process.env.HOME = "/nonexistent";
+    const fake = join(tmpdir(), "nonexistent-sanity-auth");
+    process.env.HOME = fake;
+    process.env.USERPROFILE = fake;
     expect(() => getToken()).toThrow("No SANITY_TOKEN");
   });
 });
@@ -143,20 +148,18 @@ describe("getToken", () => {
 // --- collectImages ---
 
 describe("collectImages", () => {
-  const tmpDir = `/tmp/mcp-sanity-images-test-${Date.now()}`;
+  const tmpDir = join(tmpdir(), `mcp-sanity-images-test-${Date.now()}`);
 
-  beforeEach(async () => {
-    const { mkdirSync, writeFileSync } = await import("node:fs");
-    mkdirSync(`${tmpDir}/sub`, { recursive: true });
-    writeFileSync(`${tmpDir}/a.png`, "");
-    writeFileSync(`${tmpDir}/b.jpg`, "");
-    writeFileSync(`${tmpDir}/c.txt`, "");
-    writeFileSync(`${tmpDir}/sub/d.webp`, "");
-    writeFileSync(`${tmpDir}/sub/e.pdf`, "");
+  beforeEach(() => {
+    mkdirSync(join(tmpDir, "sub"), { recursive: true });
+    writeFileSync(join(tmpDir, "a.png"), "");
+    writeFileSync(join(tmpDir, "b.jpg"), "");
+    writeFileSync(join(tmpDir, "c.txt"), "");
+    writeFileSync(join(tmpDir, "sub", "d.webp"), "");
+    writeFileSync(join(tmpDir, "sub", "e.pdf"), "");
   });
 
-  afterEach(async () => {
-    const { rmSync } = await import("node:fs");
+  afterEach(() => {
     rmSync(tmpDir, { recursive: true, force: true });
   });
 
@@ -174,7 +177,8 @@ describe("collectImages", () => {
   });
 
   test("returns empty for missing directory", () => {
-    expect(collectImages("/nonexistent", false)).toEqual([]);
+    const missing = join(tmpdir(), "nonexistent-collect-test");
+    expect(collectImages(missing, false)).toEqual([]);
   });
 
   test("excludes non-image files", () => {
