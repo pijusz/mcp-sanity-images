@@ -1,6 +1,6 @@
 {
   "name": "mcp-sanity-images",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "MCP server for uploading local images to Sanity CMS",
   "type": "module",
   "bin": {
