@@ -1,12 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import {
-  altFromFilename,
-  imageRef,
-  mutate,
-  resolveConfig,
-  uploadAsset,
-} from "../sanity";
+import { altFromFilename, imageRef, mutate, resolveConfig, uploadAsset } from "../sanity";
 import type { ToolResponse, UploadResult } from "../types";
 
 const projectIdParam = z

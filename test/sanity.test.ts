@@ -141,7 +141,10 @@ describe("getToken", () => {
     const fakeHome = join(tmpdir(), `sanity-auth-test-${Date.now()}`);
     const configDir = join(fakeHome, ".config", "sanity");
     mkdirSync(configDir, { recursive: true });
-    writeFileSync(join(configDir, "config.json"), JSON.stringify({ authToken: "cli-token-456" }));
+    writeFileSync(
+      join(configDir, "config.json"),
+      JSON.stringify({ authToken: "cli-token-456" }),
+    );
     process.env.HOME = fakeHome;
     process.env.USERPROFILE = fakeHome;
     delete process.env.APPDATA;
@@ -154,7 +157,10 @@ describe("getToken", () => {
     const fakeHome = join(tmpdir(), `sanity-auth-legacy-${Date.now()}`);
     const configDir = join(fakeHome, ".config", "sanity");
     mkdirSync(configDir, { recursive: true });
-    writeFileSync(join(configDir, "auth.json"), JSON.stringify({ token: "legacy-token-789" }));
+    writeFileSync(
+      join(configDir, "auth.json"),
+      JSON.stringify({ token: "legacy-token-789" }),
+    );
     process.env.HOME = fakeHome;
     process.env.USERPROFILE = fakeHome;
     delete process.env.APPDATA;
@@ -167,7 +173,10 @@ describe("getToken", () => {
     const fakeHome = join(tmpdir(), `sanity-auth-priority-${Date.now()}`);
     const configDir = join(fakeHome, ".config", "sanity");
     mkdirSync(configDir, { recursive: true });
-    writeFileSync(join(configDir, "config.json"), JSON.stringify({ authToken: "new-token" }));
+    writeFileSync(
+      join(configDir, "config.json"),
+      JSON.stringify({ authToken: "new-token" }),
+    );
     writeFileSync(join(configDir, "auth.json"), JSON.stringify({ token: "old-token" }));
     process.env.HOME = fakeHome;
     process.env.USERPROFILE = fakeHome;

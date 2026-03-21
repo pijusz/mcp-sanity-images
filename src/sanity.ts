@@ -69,8 +69,14 @@ export function getToken(): string {
   const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
   const candidates: { path: string; field: string }[] = [];
   if (home) {
-    candidates.push({ path: join(home, ".config", "sanity", "config.json"), field: "authToken" });
-    candidates.push({ path: join(home, ".config", "sanity", "auth.json"), field: "token" });
+    candidates.push({
+      path: join(home, ".config", "sanity", "config.json"),
+      field: "authToken",
+    });
+    candidates.push({
+      path: join(home, ".config", "sanity", "auth.json"),
+      field: "token",
+    });
   }
 
   for (const { path, field } of candidates) {
