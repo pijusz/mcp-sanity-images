@@ -1,6 +1,6 @@
 {
   "name": "mcp-sanity-images",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "description": "MCP server for uploading local images to Sanity CMS",
   "type": "module",
   "main": "dist/index.js",
@@ -48,5 +48,6 @@
     "@biomejs/biome": "2.4.8",
     "@types/bun": "1.3.11",
     "typescript": "5.9.3"
-  }
+  },
+  "mcpName": "io.github.pijusz/mcp-sanity-images"
 }
