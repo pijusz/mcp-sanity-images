@@ -4,9 +4,11 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { collectImages } from "../sanity";
 import type { ImageInfo, ToolResponse } from "../types";
+import { readTool } from "../utils/register-tool";
 
 export function registerBrowseTools(server: McpServer): void {
-  server.tool(
+  readTool(
+    server,
     "list_images",
     "List image files in a directory so you can see what's available to upload",
     {

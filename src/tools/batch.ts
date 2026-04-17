@@ -10,9 +10,11 @@ import {
   uploadAsset,
 } from "../sanity";
 import type { BatchUploadResult, ToolResponse } from "../types";
+import { writeTool } from "../utils/register-tool";
 
 export function registerBatchTools(server: McpServer): void {
-  server.tool(
+  writeTool(
+    server,
     "batch_upload",
     "Upload all images from a folder as Sanity assets (no document patching)",
     {

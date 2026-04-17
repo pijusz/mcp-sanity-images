@@ -2,9 +2,11 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { groq, resolveConfig } from "../sanity";
 import type { ToolResponse } from "../types";
+import { readTool } from "../utils/register-tool";
 
 export function registerQueryTools(server: McpServer): void {
-  server.tool(
+  readTool(
+    server,
     "groq_query",
     "Run a GROQ query against the Sanity dataset (useful to find document IDs before attaching images)",
     {

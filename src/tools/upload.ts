@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { altFromFilename, imageRef, mutate, resolveConfig, uploadAsset } from "../sanity";
 import type { ToolResponse, UploadResult } from "../types";
+import { writeTool } from "../utils/register-tool";
 
 const projectIdParam = z
   .string()
@@ -13,7 +14,8 @@ const datasetParam = z
   .describe("Sanity dataset (falls back to SANITY_DATASET env, then 'production')");
 
 export function registerUploadTools(server: McpServer): void {
-  server.tool(
+  writeTool(
+    server,
     "upload_image",
     "Upload a local image file to Sanity as an image asset",
     {
@@ -41,7 +43,8 @@ export function registerUploadTools(server: McpServer): void {
     },
   );
 
-  server.tool(
+  writeTool(
+    server,
     "upload_and_set",
     "Upload an image and patch it onto a Sanity document field in one call",
     {
