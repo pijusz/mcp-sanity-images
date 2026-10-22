@@ -6,6 +6,7 @@ import type { SanityAsset, SanityConfig, SanityImageRef } from "./types";
 
 const API_VERSION = "2021-10-21";
 const DEFAULT_DATASET = "production";
+const MAX_GET_URL_LENGTH = 8000;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -22,8 +23,12 @@ async function fetchWithRetry(
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeout);
-      const res = await fetch(url, { ...fetchInit, signal: controller.signal });
-      clearTimeout(timer);
+      let res: Response;
+      try {
+        res = await fetch(url, { ...fetchInit, signal: controller.signal });
+      } finally {
+        clearTimeout(timer);
+      }
 
       if ((res.status === 429 || res.status >= 500) && attempt < retries) {
         const delay = retryDelay * 2 ** attempt;
@@ -114,10 +119,21 @@ export async function uploadAsset(
   filePath: string,
   config: SanityConfig,
 ): Promise<SanityAsset> {
+  if (!existsSync(filePath)) {
+    throw new Error(`File not found: ${filePath}`);
+  }
+  if (!statSync(filePath).isFile()) {
+    throw new Error(`Not a file: ${filePath}`);
+  }
+  const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
+  const mime = MIME_TYPES[ext];
+  if (!mime) {
+    throw new Error(
+      `Unsupported image type ".${ext}" for ${filePath}. Supported: ${Object.keys(MIME_TYPES).join(", ")}`,
+    );
+  }
   const token = getToken();
   const buffer = await readFile(filePath);
-  const ext = filePath.split(".").pop()?.toLowerCase() ?? "png";
-  const mime = MIME_TYPES[ext] ?? "image/png";
   const filename = filePath.split(/[/\\]/).pop() ?? "image.png";
 
   const res = await fetchWithRetry(
@@ -165,10 +181,20 @@ export async function mutate(
 
 export async function groq<T>(query: string, config: SanityConfig): Promise<T> {
   const token = getToken();
-  const url = `${baseUrl(config.projectId)}/data/query/${config.dataset}?query=${encodeURIComponent(query)}`;
-  const res = await fetchWithRetry(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const endpoint = `${baseUrl(config.projectId)}/data/query/${config.dataset}`;
+  const getUrl = `${endpoint}?query=${encodeURIComponent(query)}`;
+  // Long queries overflow URL limits on GET; Sanity accepts the same query via POST.
+  const res =
+    getUrl.length <= MAX_GET_URL_LENGTH
+      ? await fetchWithRetry(getUrl, { headers: { Authorization: `Bearer ${token}` } })
+      : await fetchWithRetry(endpoint, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query }),
+        });
 
   if (!res.ok) {
     const text = await res.text();
@@ -188,7 +214,7 @@ export function imageRef(assetId: string, alt?: string): SanityImageRef {
   return ref;
 }
 
-export const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "webp", "gif", "svg"]);
+export const IMAGE_EXTENSIONS = new Set(Object.keys(MIME_TYPES));
 
 export function isImageFile(filename: string): boolean {
   const ext = filename.split(".").pop()?.toLowerCase() ?? "";

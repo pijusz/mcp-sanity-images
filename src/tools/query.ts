@@ -8,7 +8,7 @@ export function registerQueryTools(server: McpServer): void {
   readTool(
     server,
     "groq_query",
-    "Run a GROQ query against the Sanity dataset (useful to find document IDs before attaching images)",
+    "Run a read-only GROQ query against the Sanity dataset and return the result as JSON. Useful to find document IDs and field names before upload_and_set.",
     {
       query: z.string().describe("GROQ query string"),
       projectId: z

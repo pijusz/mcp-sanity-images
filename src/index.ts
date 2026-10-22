@@ -7,6 +7,7 @@ import { registerBatchTools } from "./tools/batch";
 import { registerBrowseTools } from "./tools/browse";
 import { registerQueryTools } from "./tools/query";
 import { registerUploadTools } from "./tools/upload";
+import { checkForUpdates } from "./update-check";
 
 export const VERSION = pkg.version;
 
@@ -29,26 +30,4 @@ const transport = new StdioServerTransport();
 await server.connect(transport);
 log.info(`v${VERSION} running on stdio`);
 
-checkForUpdates();
-
-function checkForUpdates() {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 3000);
-
-  fetch("https://api.github.com/repos/pijusz/mcp-sanity-images/releases/latest", {
-    headers: { Accept: "application/vnd.github+json" },
-    signal: controller.signal,
-  })
-    .then((res) => (res.ok ? res.json() : null))
-    .then((data: { tag_name?: string } | null) => {
-      if (!data?.tag_name) return;
-      const latest = data.tag_name.replace(/^v/, "");
-      if (latest !== VERSION) {
-        log.warn(
-          `v${latest} available (current: v${VERSION}). Download: https://github.com/pijusz/mcp-sanity-images/releases/latest`,
-        );
-      }
-    })
-    .catch(() => {})
-    .finally(() => clearTimeout(timeout));
-}
+checkForUpdates(VERSION);

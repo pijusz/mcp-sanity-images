@@ -10,7 +10,7 @@ export function registerBrowseTools(server: McpServer): void {
   readTool(
     server,
     "list_images",
-    "List image files in a directory so you can see what's available to upload",
+    "List image files (png, jpg, jpeg, webp, gif, svg) in a local directory with their sizes, so you can see what is available to upload. Does not contact Sanity.",
     {
       directory: z.string().describe("Path to the directory to list"),
       recursive: z

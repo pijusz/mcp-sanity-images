@@ -17,7 +17,7 @@ export function registerUploadTools(server: McpServer): void {
   writeTool(
     server,
     "upload_image",
-    "Upload a local image file to Sanity as an image asset",
+    "Upload a local image file (png, jpg, jpeg, webp, gif, svg) to Sanity as an image asset. Returns the asset ID, CDN URL, and an image `reference` object ready to set on any image field.",
     {
       filePath: z.string().describe("Absolute path to the image file"),
       alt: z.string().optional().describe("Alt text (derived from filename if omitted)"),
@@ -46,11 +46,15 @@ export function registerUploadTools(server: McpServer): void {
   writeTool(
     server,
     "upload_and_set",
-    "Upload an image and patch it onto a Sanity document field in one call",
+    "Upload a local image and set it on a field of an existing Sanity document in one call. Overwrites the current value of that field. Use groq_query first to find the document ID.",
     {
       filePath: z.string().describe("Absolute path to the image file"),
       documentId: z.string().describe("Sanity document ID to patch"),
-      fieldPath: z.string().describe("Dot-path to the image field (e.g. 'hero.image')"),
+      fieldPath: z
+        .string()
+        .describe(
+          "Path to the image field, dot-separated for nested objects (e.g. 'hero.image')",
+        ),
       alt: z.string().optional().describe("Alt text (derived from filename if omitted)"),
       projectId: projectIdParam,
       dataset: datasetParam,

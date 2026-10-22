@@ -16,7 +16,7 @@ export function registerBatchTools(server: McpServer): void {
   writeTool(
     server,
     "batch_upload",
-    "Upload all images from a folder as Sanity assets (no document patching)",
+    "Upload every image (png, jpg, jpeg, webp, gif, svg) in a local folder as Sanity assets. Does not patch any documents. Files that fail are reported in `failed` while the rest still upload. Returns asset IDs, URLs and ready-to-use image references.",
     {
       directory: z.string().describe("Path to the folder with images"),
       recursive: z
@@ -55,26 +55,41 @@ export function registerBatchTools(server: McpServer): void {
       }
 
       const results: BatchUploadResult[] = [];
+      const failed: { filePath: string; error: string }[] = [];
 
+      // Keep going on per-file errors: aborting mid-batch would throw away the
+      // asset IDs of everything already uploaded, and a retry would duplicate them.
       for (const file of files) {
-        const asset = await uploadAsset(file, config);
-        const alt = altFromFilename(basename(file));
-        results.push({
-          filePath: file,
-          assetId: asset._id,
-          url: asset.url,
-          alt,
-          reference: imageRef(asset._id, alt),
-        });
+        try {
+          const asset = await uploadAsset(file, config);
+          const alt = altFromFilename(basename(file));
+          results.push({
+            filePath: file,
+            assetId: asset._id,
+            url: asset.url,
+            alt,
+            reference: imageRef(asset._id, alt),
+          });
+        } catch (err) {
+          failed.push({
+            filePath: file,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+
+      const summary: Record<string, unknown> = {
+        uploaded: results.length,
+        assets: results,
+      };
+      if (failed.length > 0) {
+        summary.failedCount = failed.length;
+        summary.failed = failed;
       }
 
       return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify({ uploaded: results.length, assets: results }, null, 2),
-          },
-        ],
+        content: [{ type: "text", text: JSON.stringify(summary, null, 2) }],
+        ...(results.length === 0 ? { isError: true } : {}),
       };
     },
   );

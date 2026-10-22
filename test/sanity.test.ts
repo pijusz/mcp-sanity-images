@@ -10,7 +10,9 @@ import {
   imageRef,
   isImageFile,
   resolveConfig,
+  uploadAsset,
 } from "../src/sanity";
+import { isNewerVersion } from "../src/update-check";
 
 // --- Pure functions (no mocking needed) ---
 
@@ -234,5 +236,49 @@ describe("collectImages", () => {
   test("excludes non-image files", () => {
     const files = collectImages(tmpDir, true);
     expect(files.every((f) => !f.endsWith(".txt") && !f.endsWith(".pdf"))).toBe(true);
+  });
+});
+
+describe("isNewerVersion", () => {
+  test("detects newer versions", () => {
+    expect(isNewerVersion("0.4.1", "0.4.0")).toBe(true);
+    expect(isNewerVersion("v1.0.0", "0.9.9")).toBe(true);
+    expect(isNewerVersion("0.10.0", "0.9.0")).toBe(true);
+  });
+
+  test("does not flag equal or older versions", () => {
+    expect(isNewerVersion("0.4.0", "0.4.0")).toBe(false);
+    expect(isNewerVersion("0.3.4", "0.4.0")).toBe(false);
+    expect(isNewerVersion("v0.3.4", "0.3.6")).toBe(false);
+  });
+});
+
+describe("uploadAsset validation", () => {
+  const dir = join(tmpdir(), `mcp-sanity-images-upload-${Date.now()}`);
+  const config = { projectId: "test-project", dataset: "test" };
+
+  beforeEach(() => {
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "notes.txt"), "x");
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  test("rejects missing files before any network call", async () => {
+    await expect(uploadAsset(join(dir, "missing.png"), config)).rejects.toThrow(
+      "File not found",
+    );
+  });
+
+  test("rejects directories", async () => {
+    await expect(uploadAsset(dir, config)).rejects.toThrow("Not a file");
+  });
+
+  test("rejects unsupported extensions", async () => {
+    await expect(uploadAsset(join(dir, "notes.txt"), config)).rejects.toThrow(
+      "Unsupported image type",
+    );
   });
 });

@@ -160,4 +160,29 @@ describe("batch_upload error paths", () => {
     const dir = join(tmpdir(), "some-dir");
     expect(tool.handler({ directory: dir }, {} as any)).rejects.toThrow("No project ID");
   });
+
+  test("reports per-file failures instead of aborting the batch", async () => {
+    const dir = join(tmpdir(), `mcp-sanity-images-batch-fail-${Date.now()}`);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "a.png"), "fake");
+    writeFileSync(join(dir, "b.png"), "fake");
+
+    // No token anywhere, so every upload fails before touching the network.
+    process.env.SANITY_PROJECT_ID = "test-project";
+    delete process.env.SANITY_TOKEN;
+    process.env.HOME = dir;
+    process.env.USERPROFILE = dir;
+
+    const server = new McpServer({ name: "test", version: "0.0.1" });
+    registerBatchTools(server);
+    const tool = getTools(server)["batch_upload"];
+    const result = await tool.handler({ directory: dir }, {} as any);
+    const data = JSON.parse(result.content[0].text);
+    expect(result.isError).toBe(true);
+    expect(data.uploaded).toBe(0);
+    expect(data.failedCount).toBe(2);
+    expect(data.failed[0].error).toContain("SANITY_TOKEN");
+
+    rmSync(dir, { recursive: true, force: true });
+  });
 });
