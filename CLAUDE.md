@@ -1,6 +1,6 @@
 # mcp-sanity-images
 
-MCP server for uploading local images to Sanity CMS. Pure Bun, no build step.
+MCP server for uploading local images to Sanity CMS. Bun for dev; `bun run build:npm` bundles `dist/index.js` for the npm package.
 
 See [README.md](./README.md) for full documentation.
 
@@ -19,6 +19,8 @@ bun src/index.ts        # start server on stdio
 src/
   index.ts              MCP entry point — server setup + stdio transport
   sanity.ts             Sanity REST API helpers (token, upload, mutate, groq)
+  update-check.ts       GitHub release check (warns only when a newer version exists)
+  utils/register-tool.ts  readTool/writeTool wrappers (registerTool + annotations)
   tools/
     upload.ts           upload_image, upload_and_set
     batch.ts            batch_upload (folder → assets)
@@ -37,7 +39,7 @@ src/
 ## Adding a tool
 
 1. Create `src/tools/newtool.ts` with a `registerXTools(server: McpServer)` function
-2. Use `server.tool(name, description, zodSchema, handler)`
+2. Use `readTool(...)` or `writeTool(...)` from `src/utils/register-tool.ts` (sets MCP annotations)
 3. Import and call register function in `src/index.ts`
 4. Add test in `test/`
 

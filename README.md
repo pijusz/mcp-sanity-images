@@ -179,6 +179,8 @@ directory: "/path/to/images"
 recursive: true
 ```
 
+Returns `{ uploaded, assets }`. If some files fail, the rest still upload and the failures are listed in `failed` (with `failedCount`).
+
 ### list_images
 
 List image files without uploading — useful for the AI to see what's available.
@@ -190,7 +192,7 @@ recursive: true
 
 ### groq_query
 
-Run any GROQ query. Useful to find document IDs before using `upload_and_set`.
+Run any GROQ query (read-only). Long queries are sent via POST automatically. Useful to find document IDs before using `upload_and_set`.
 
 ```
 query: "*[_type == 'product']{_id, title, slug}"
@@ -203,7 +205,7 @@ query: "*[_type == 'product']{_id, title, slug}"
 **Using a binary**: The server checks for new releases on startup and logs to stderr if outdated:
 
 ```
-[update] v0.2.0 available (current: v0.1.0). Download: https://github.com/pijusz/mcp-sanity-images/releases/latest
+[mcp-sanity-images] WARN v0.5.0 available (current: v0.4.1). Download: https://github.com/pijusz/mcp-sanity-images/releases/latest
 ```
 
 Check your installed version:
@@ -222,7 +224,7 @@ Requires [Bun](https://bun.sh/).
 git clone https://github.com/pijusz/mcp-sanity-images.git
 cd mcp-sanity-images
 bun install
-bun test          # 37 tests
+bun test
 bun run lint      # biome check
 bun run build     # compile standalone binary
 ```

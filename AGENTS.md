@@ -6,7 +6,7 @@ See [README.md](./README.md) for full documentation, [CLAUDE.md](./CLAUDE.md) fo
 
 ## Conventions
 
-- Pure Bun runtime — no Node.js build step, ship `.ts` directly
+- Bun for dev and tests; the npm package ships a Node bundle built by `bun run build:npm` (`dist/index.js`)
 - `node:fs` and `node:path` are fine (Bun supports them natively)
 - `Bun.file()` for async file reads
 - All logging to `console.error` (stdout is JSON-RPC)
