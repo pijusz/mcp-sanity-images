@@ -54,8 +54,12 @@ jobs:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}
 
+  # Gated on publish, not just build. Both used to hang off build and raced, so
+  # a failed npm verification still left a GitHub release advertising a version
+  # nobody could install. Ordering it after publish prevents that state instead
+  # of reporting it after the fact.
   release:
-    needs: build
+    needs: [build, publish]
     runs-on: ubuntu-latest
 
     steps:
@@ -71,3 +75,65 @@ jobs:
         with:
           generate_release_notes: true
           files: artifacts/*/mcp-sanity-images-*
+          # "legacy" weighs semver, not just creation date, so backfilling an
+          # older tag cannot steal the Latest badge. src/index.ts polls
+          # releases/latest, so a wrong badge tells users to downgrade.
+          make_latest: legacy
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - run: bun install --frozen-lockfile
+
+      - name: Set version from tag
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          bun -e "const p=require('./package.json');p.version='$VERSION';require('fs').writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')"
+
+      - name: Build for npm
+        run: bun build src/index.ts --bundle --target node --outfile dist/index.js && node -e "const f='dist/index.js';require('fs').writeFileSync(f,require('fs').readFileSync(f,'utf8').replace('#!/usr/bin/env bun','#!/usr/bin/env node'))"
+
+      # Publishing is done locally with an npmrc token, so NPM_TOKEN is usually
+      # unset. Skip rather than fail the release run; if the secret is ever
+      # added, this starts publishing automatically with no further change.
+      - name: Publish to npm
+        if: ${{ env.NODE_AUTH_TOKEN != '' }}
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # No token means the publish is expected to happen locally. Don't just
+      # assume it did — a GitHub release pointing at a version that isn't on
+      # npm is worse than a failed workflow. Poll, then fail loudly.
+      - name: Verify the version reached npm
+        if: ${{ env.NODE_AUTH_TOKEN == '' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          PKG=$(node -p "require('./package.json').name")
+          VERSION=${GITHUB_REF_NAME#v}
+          echo "NPM_TOKEN unset — expecting a local publish of $PKG@$VERSION." >> $GITHUB_STEP_SUMMARY
+          for i in $(seq 1 20); do
+            if npm view "$PKG@$VERSION" version >/dev/null 2>&1; then
+              echo "Confirmed $PKG@$VERSION is on npm." >> $GITHUB_STEP_SUMMARY
+              exit 0
+            fi
+            echo "Attempt $i/20: not on npm yet, waiting 30s..."
+            sleep 30
+          done
+          echo "::error::$PKG@$VERSION is not on npm after 10 minutes. The GitHub release for $GITHUB_REF_NAME points at a version nobody can install — run 'npm publish' locally."
+          echo "FAILED: $PKG@$VERSION never appeared on npm." >> $GITHUB_STEP_SUMMARY
+          exit 1
