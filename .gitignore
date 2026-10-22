@@ -6,3 +6,5 @@ dist/
 .env.local
 mcp-sanity-images-*
 mcp-sanity-images
+.mcpregistry_*
+mcp-publisher
