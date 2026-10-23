@@ -12,6 +12,8 @@ export interface SanityImageRef {
   };
 }
 
+export type Perspective = "raw" | "published" | "drafts";
+
 export interface SanityConfig {
   projectId: string;
   dataset: string;

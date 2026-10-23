@@ -2,9 +2,18 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { log } from "./log";
-import type { SanityAsset, SanityConfig, SanityImageRef } from "./types";
+import type { Perspective, SanityAsset, SanityConfig, SanityImageRef } from "./types";
 
-const API_VERSION = "2021-10-21";
+// Pinned Content Lake API version. v2025-02-19 changed the query default
+// perspective from `raw` to `published`, so every query sends one explicitly.
+export const API_VERSION = "2025-02-19";
+export const PERSPECTIVES = [
+  "raw",
+  "published",
+  "drafts",
+] as const satisfies readonly Perspective[];
+export const DEFAULT_PERSPECTIVE: Perspective = "raw";
+const DRAFTS_PREFIX = "drafts.";
 const DEFAULT_DATASET = "production";
 const MAX_GET_URL_LENGTH = 8000;
 
@@ -154,22 +163,26 @@ export async function uploadAsset(
   return json.document;
 }
 
+export function mutateUrl(config: SanityConfig): string {
+  // returnIds: report which document each mutation touched.
+  // visibility=sync (the API default, made explicit): return only once the
+  // change is visible to queries, so a follow-up groq_query sees it.
+  return `${baseUrl(config.projectId)}/data/mutate/${config.dataset}?returnIds=true&visibility=sync`;
+}
+
 export async function mutate(
   mutations: Record<string, unknown>[],
   config: SanityConfig,
 ): Promise<unknown> {
   const token = getToken();
-  const res = await fetchWithRetry(
-    `${baseUrl(config.projectId)}/data/mutate/${config.dataset}`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ mutations }),
+  const res = await fetchWithRetry(mutateUrl(config), {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify({ mutations }),
+  });
 
   if (!res.ok) {
     const text = await res.text();
@@ -179,21 +192,58 @@ export async function mutate(
   return res.json();
 }
 
-export async function groq<T>(query: string, config: SanityConfig): Promise<T> {
-  const token = getToken();
+export interface GroqOptions {
+  params?: Record<string, unknown>;
+  perspective?: Perspective;
+}
+
+export interface QueryRequest {
+  url: string;
+  method: "GET" | "POST";
+  body?: string;
+}
+
+export function buildQueryRequest(
+  query: string,
+  config: SanityConfig,
+  opts: GroqOptions = {},
+): QueryRequest {
   const endpoint = `${baseUrl(config.projectId)}/data/query/${config.dataset}`;
-  const getUrl = `${endpoint}?query=${encodeURIComponent(query)}`;
+  const perspective = opts.perspective ?? DEFAULT_PERSPECTIVE;
+  // The query endpoint only takes `perspective` as a URL parameter, also for POST.
+  const postUrl = `${endpoint}?perspective=${encodeURIComponent(perspective)}`;
+  const search = new URLSearchParams({ query });
+  for (const [key, value] of Object.entries(opts.params ?? {})) {
+    search.set(`$${key}`, JSON.stringify(value));
+  }
+  search.set("perspective", perspective);
+  const getUrl = `${endpoint}?${search.toString()}`;
+  if (getUrl.length <= MAX_GET_URL_LENGTH) {
+    return { url: getUrl, method: "GET" };
+  }
   // Long queries overflow URL limits on GET; Sanity accepts the same query via POST.
+  const body: Record<string, unknown> = { query };
+  if (opts.params) body.params = opts.params;
+  return { url: postUrl, method: "POST", body: JSON.stringify(body) };
+}
+
+export async function groq<T>(
+  query: string,
+  config: SanityConfig,
+  opts: GroqOptions = {},
+): Promise<T> {
+  const token = getToken();
+  const req = buildQueryRequest(query, config, opts);
   const res =
-    getUrl.length <= MAX_GET_URL_LENGTH
-      ? await fetchWithRetry(getUrl, { headers: { Authorization: `Bearer ${token}` } })
-      : await fetchWithRetry(endpoint, {
+    req.method === "GET"
+      ? await fetchWithRetry(req.url, { headers: { Authorization: `Bearer ${token}` } })
+      : await fetchWithRetry(req.url, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ query }),
+          body: req.body,
         });
 
   if (!res.ok) {
@@ -203,6 +253,76 @@ export async function groq<T>(query: string, config: SanityConfig): Promise<T> {
 
   const json = (await res.json()) as { result: T };
   return json.result;
+}
+
+export interface PatchTarget {
+  /** The document ID that will actually be patched. */
+  id: string;
+  /** Set when the target differs from what was asked for, or a draft is left untouched. */
+  note?: string;
+}
+
+/**
+ * Decide which document to patch, given the requested ID and the IDs that
+ * exist among `<id>` and `drafts.<id>`.
+ *
+ * - The requested ID exists: patch it exactly. If it is a published ID with a
+ *   pending draft, say so, because Studio shows the draft and publishing the
+ *   draft would overwrite the change.
+ * - A bare ID that only exists as a draft (never published, e.g. an `_id`
+ *   taken from the `drafts` perspective): patch `drafts.<id>`.
+ * - Nothing exists: throw before anything is uploaded.
+ */
+export function choosePatchTarget(
+  requestedId: string,
+  existingIds: string[],
+): PatchTarget {
+  const existing = new Set(existingIds);
+  const isDraft = requestedId.startsWith(DRAFTS_PREFIX);
+  const baseId = isDraft ? requestedId.slice(DRAFTS_PREFIX.length) : requestedId;
+  const draftId = `${DRAFTS_PREFIX}${baseId}`;
+
+  if (existing.has(requestedId)) {
+    if (!isDraft && !requestedId.startsWith("versions.") && existing.has(draftId)) {
+      return {
+        id: requestedId,
+        note: `Patched the published document. A draft (${draftId}) with unpublished changes also exists and was not changed: Studio shows the draft, and publishing it will overwrite this field. Pass documentId "${draftId}" to patch the draft instead.`,
+      };
+    }
+    return { id: requestedId };
+  }
+  if (!isDraft && existing.has(draftId)) {
+    return {
+      id: draftId,
+      note: `"${requestedId}" has never been published; patched its draft ${draftId} instead.`,
+    };
+  }
+  if (isDraft && existing.has(baseId)) {
+    throw new Error(
+      `Document not found: ${requestedId}. The published document ${baseId} exists; pass that ID to patch it.`,
+    );
+  }
+  throw new Error(
+    isDraft || requestedId.startsWith("versions.")
+      ? `Document not found: ${requestedId}`
+      : `Document not found: ${requestedId} (also checked ${draftId})`,
+  );
+}
+
+export async function resolvePatchTarget(
+  documentId: string,
+  config: SanityConfig,
+): Promise<PatchTarget> {
+  const baseId = documentId.startsWith(DRAFTS_PREFIX)
+    ? documentId.slice(DRAFTS_PREFIX.length)
+    : documentId;
+  const ids = [...new Set([documentId, baseId, `${DRAFTS_PREFIX}${baseId}`])];
+  // `raw` so drafts and published documents are both visible with their real IDs.
+  const existing = await groq<string[]>("*[_id in $ids]._id", config, {
+    params: { ids },
+    perspective: "raw",
+  });
+  return choosePatchTarget(documentId, existing ?? []);
 }
 
 export function imageRef(assetId: string, alt?: string): SanityImageRef {

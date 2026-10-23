@@ -133,7 +133,7 @@ Add to your `claude_desktop_config.json`:
 | `upload_and_set` | Upload an image and patch it onto a document field |
 | `batch_upload` | Upload all images from a folder as assets |
 | `list_images` | List image files in a directory |
-| `groq_query` | Run a GROQ query (find documents before attaching) |
+| `groq_query` | Run a GROQ query (find documents before attaching); optional `perspective` (raw default, published, drafts) |
 
 Supported formats: PNG, JPG/JPEG, WebP, GIF, SVG.
 
@@ -166,9 +166,21 @@ Upload + patch in one call.
 
 ```
 filePath: "/path/to/hero.png"
-documentId: "product-123"
+documentId: "product-123"      # or "drafts.product-123" to patch the draft
 fieldPath: "hero.image"
 ```
+
+Before uploading, the tool checks which of `<id>` and `drafts.<id>` exist, so a wrong ID uploads nothing:
+
+| You pass | Exists | Patched |
+|----------|--------|---------|
+| `product-123` | published only | `product-123` |
+| `product-123` | published + draft | `product-123`, with a `note` that the draft was left alone (Studio shows the draft, and publishing it overwrites the field) |
+| `product-123` | draft only (never published) | `drafts.product-123`, with a `note` and `requestedDocumentId` |
+| `drafts.product-123` | draft | `drafts.product-123` |
+| anything | neither | nothing; returns "Document not found" |
+
+The response's `documentId` is the document actually patched. Mutations are sent with `returnIds=true&visibility=sync`, so a follow-up `groq_query` sees the change.
 
 ### batch_upload
 
@@ -196,7 +208,16 @@ Run any GROQ query (read-only). Long queries are sent via POST automatically. Us
 
 ```
 query: "*[_type == 'product']{_id, title, slug}"
+perspective: "raw"   # optional: raw (default) | published | drafts
 ```
+
+| Perspective | What the query sees |
+|-------------|---------------------|
+| `raw` (default) | Published documents and drafts side by side, with their real IDs (`drafts.`-prefixed for drafts). Pass these IDs straight to `upload_and_set`. |
+| `published` | Published documents only; drafts are invisible. |
+| `drafts` | Every draft applied as if published. `_id` is always the published ID (even for never-published drafts); the stored ID is in `_originalId`. |
+
+The server pins Sanity API version `v2025-02-19`. That version made `published` the API's default perspective. This tool sends `raw` unless you ask otherwise, so results match what earlier releases (API `v2021-10-21`, default `raw`) returned.
 
 ## Updates
 

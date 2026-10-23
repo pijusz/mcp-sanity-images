@@ -31,9 +31,11 @@ src/
 ## Key patterns
 
 - All tools accept optional `projectId`/`dataset` params that override env vars
-- `resolveOpts()` resolves config: tool params → env vars → defaults
+- `resolveConfig()` resolves config: tool params → env vars → defaults
 - `getToken()` resolves auth: `SANITY_TOKEN` env → CLI auth (`~/.config/sanity/config.json`)
 - `console.error` only — stdout is reserved for JSON-RPC (stdio transport)
+- Sanity API version is pinned in `src/sanity.ts` (`API_VERSION = "2025-02-19"`). Since that version the API defaults to the `published` perspective, so `groq()` always sends `perspective` (default `raw`, overridable via groq_query's `perspective` param)
+- `upload_and_set` calls `resolvePatchTarget()` before uploading: it checks `<id>`/`drafts.<id>` with a raw query and `choosePatchTarget()` picks the ID (exact ID if it exists, else the draft of a never-published doc, else error)
 - `imageRef()` builds the `{ _type: "image", asset: { _ref } }` structure Sanity expects
 
 ## Adding a tool
@@ -58,6 +60,7 @@ bun test                      # all tests
 bun test test/sanity.test.ts  # unit tests only
 bun test test/tools.test.ts   # tool registration + list_images
 bun test test/server.test.ts  # integration (spawns server process)
+bun test test/api-version.test.ts  # API version, perspectives, patch-target logic (mocked fetch)
 ```
 
 Tests use real filesystem (tmp dirs) for `collectImages` and `list_images`. API-calling tools are tested for registration and error paths only — actual uploads require a Sanity token.
